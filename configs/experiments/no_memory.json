@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "output_dir": "outputs/no_memory_smoke",
+  "dataset": {
+    "path": "benchmark/bfcl/data/multiturn_data_base_val.jsonl",
+    "train_path": "benchmark/bfcl/data/multiturn_data_base_train.jsonl",
+    "answer_path": "benchmark/bfcl/data/possible_answer",
+    "max_tasks": 2
+  },
+  "model": {
+    "name": "${TEVO_MODEL_ID}",
+    "path": "${TEVO_MODEL_DIR}",
+    "base_urls": [
+      "${TEVO_LLM_BASE_URL}"
+    ],
+    "api_key_env": "TEVO_LLM_API_KEY",
+    "temperature": 0.9,
+    "enable_thinking": true,
+    "max_tokens": 8192,
+    "max_interactions": 30,
+    "max_retries": 1,
+    "timeout_seconds": 600,
+    "context_budget": {
+      "policy": "server_tokenize_headroom",
+      "context_window_tokens": 32768
+    }
+  },
+  "seeds": [
+    20261014
+  ],
+  "budgets": {
+    "max_workers": 2,
+    "max_requests": 1000,
+    "max_total_tokens": 2000000,
+    "wall_seconds": 7200
+  },
+  "experiments": [
+    {
+      "name": "nomem",
+      "method": "nomem",
+      "category": "smoke",
+      "tool_scope": "task"
+    }
+  ],
+  "frozen": {}
+}

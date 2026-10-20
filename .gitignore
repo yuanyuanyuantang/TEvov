@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.venv/
+.coverage
+
+# 运行时生成数据
+data/memories/
+data/logs/
+data/tools/
+
+# 运行产物（实验结果/记忆库/缓存/日志，体量大且有独立快照目录备份）
+outputs/
+logs/
+*.log
+benchmark/bfcl/logs/
+
+# vendored BFCL 官方仓库（自带 .git，372M）
+benchmark/bfcl/gorilla/
+
+# 敏感信息
+.env
+.env.local
+/api
+*.key
+*.secret
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Claude Code 本地配置
+.claude/settings.local.json
+
+# Consolidated private research inputs
+artifacts/frozen_v5/
+artifacts/model_artifacts.json
+artifacts/local_model_artifacts.json
+
+# Private relocated research banks / evidence
+artifacts/memory/
+results/
+paper/

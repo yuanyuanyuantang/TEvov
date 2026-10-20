@@ -1,0 +1,13 @@
+# CPU service and HTTP clients. Observed working versions on Python 3.12.13.
+# Optional GPU serving has separate requirements; historical Ray runners are archived.
+PyYAML==6.0.3
+fastapi==0.135.3
+uvicorn==0.44.0
+pydantic==2.13.0
+requests==2.33.1
+httpx[socks]==0.28.1
+socksio==1.0.0
+openai==2.31.0
+loguru==0.7.3
+tqdm==4.67.3
+python-dotenv==1.2.2

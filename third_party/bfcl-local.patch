@@ -1,0 +1,231 @@
+diff --git a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/ast_eval/ast_checker.py b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/ast_eval/ast_checker.py
+index 214f3ba..94877d8 100644
+--- a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/ast_eval/ast_checker.py
++++ b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/ast_eval/ast_checker.py
+@@ -1,4 +1,3 @@
+-from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
+ from bfcl_eval.constants.type_mappings import (
+     JAVA_TYPE_CONVERSION,
+     JS_TYPE_CONVERSION,
+@@ -7,6 +6,12 @@ from bfcl_eval.eval_checker.ast_eval.type_convertor.java_type_converter import j
+ from bfcl_eval.eval_checker.ast_eval.type_convertor.js_type_converter import js_type_converter
+ import re
+ 
++
++def _get_model_config_mapping():
++    from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
++
++    return MODEL_CONFIG_MAPPING
++
+ #### Constants ####
+ PYTHON_TYPE_MAPPING = {
+     "string": str,
+@@ -75,6 +80,7 @@ def get_possible_answer_type(possible_answer: list):
+ def convert_func_name(function_name, model_name: str):
+     model_name_escaped = model_name.replace("_", "/")
+     if "." in function_name:
++        MODEL_CONFIG_MAPPING = _get_model_config_mapping()
+         if MODEL_CONFIG_MAPPING[model_name_escaped].underscore_to_dot:
+             # OAI does not support "." in the function name so we replace it with "_". ^[a-zA-Z0-9_-]{1,64}$ is the regex for the name.
+             # This happens for OpenAI, Mistral, and Google models
+diff --git a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner.py b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner.py
+index 0ac9bd7..d03bb22 100644
+--- a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner.py
++++ b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner.py
+@@ -20,13 +20,19 @@ from bfcl_eval.eval_checker.multi_turn_eval.multi_turn_checker import (
+     multi_turn_irrelevance_checker,
+ )
+ from bfcl_eval.eval_checker.multi_turn_eval.multi_turn_utils import is_empty_execute_response
+-from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
+ from bfcl_eval.utils import *
+ from dotenv import load_dotenv
+ from tqdm import tqdm
+ 
+ 
++def _get_model_config_mapping():
++    from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
++
++    return MODEL_CONFIG_MAPPING
++
++
+ def get_handler(model_name):
++    MODEL_CONFIG_MAPPING = _get_model_config_mapping()
+     config = MODEL_CONFIG_MAPPING[model_name]
+     handler = config.model_handler(
+         model_name, temperature=0
+@@ -489,6 +495,7 @@ def main(model, test_categories, result_dir, score_dir):
+ 
+     model_names = None
+     if model:
++        MODEL_CONFIG_MAPPING = _get_model_config_mapping()
+         model_names = []
+         for model_name in model:
+             if model_name not in MODEL_CONFIG_MAPPING:
+diff --git a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner_helper.py b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner_helper.py
+index 1de6462..b967122 100644
+--- a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner_helper.py
++++ b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/eval_runner_helper.py
+@@ -8,10 +8,15 @@ import pandas as pd
+ from bfcl_eval.constants.category_mapping import TEST_FILE_MAPPING
+ from bfcl_eval.constants.column_headers import *
+ from bfcl_eval.constants.eval_config import *
+-from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
+ from bfcl_eval.utils import extract_test_category, load_file
+ 
+ 
++def _get_model_config_mapping():
++    from bfcl_eval.constants.model_config import MODEL_CONFIG_MAPPING
++
++    return MODEL_CONFIG_MAPPING
++
++
+ def calculate_weighted_accuracy(accuracy_dict_list, display_na_if_category_missing=True):
+     has_na = False
+     total_count = 0
+@@ -110,6 +115,7 @@ def record_cost_latency(leaderboard_table, model_name, model_output_data):
+ 
+ def get_cost_latency_info(model_name, cost_data, latency_data):
+     cost, mean_latency, std_latency, percentile_95_latency = "N/A", "N/A", "N/A", "N/A"
++    MODEL_CONFIG_MAPPING = _get_model_config_mapping()
+     model_config = MODEL_CONFIG_MAPPING[model_name]
+ 
+     # For API models, we use the input and output token counts to calculate the cost
+@@ -200,6 +206,7 @@ def generate_leaderboard_csv(
+     data_combined = []
+     for model_name, value in leaderboard_table.items():
+         model_name_escaped = model_name.replace("_", "/")
++        MODEL_CONFIG_MAPPING = _get_model_config_mapping()
+         model_config = MODEL_CONFIG_MAPPING[model_name_escaped]
+ 
+         cost_data = value.get("cost", {"input_data": [], "output_data": []})
+diff --git a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/multi_turn_eval/multi_turn_utils.py b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/multi_turn_eval/multi_turn_utils.py
+index 57eb6ef..51e18d7 100644
+--- a/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/multi_turn_eval/multi_turn_utils.py
++++ b/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/multi_turn_eval/multi_turn_utils.py
+@@ -21,6 +21,60 @@ STATELESS_CLASSES = [
+ ]
+ 
+ 
++def _model_instance_namespace(model_name: str, is_evaL_run: bool = False) -> str:
++    if is_evaL_run:
++        model_name += "_eval"
++    return str(model_name).replace("-", "_").replace(".", "_").replace("/", "_")
++
++
++def _instance_name(
++    *,
++    model_name: str,
++    test_entry_id: str,
++    class_name: str,
++    is_evaL_run: bool = False,
++) -> str:
++    namespace = _model_instance_namespace(model_name, is_evaL_run=is_evaL_run)
++    return f"{namespace}_{test_entry_id}_{class_name.lower()}_instance"
++
++
++def reset_multi_turn_func_call_instances(
++    *,
++    model_name: str,
++    test_entry_id: str | None = None,
++    involved_classes: list | None = None,
++    is_evaL_run: bool = False,
++) -> int:
++    """Drop cached stateful BFCL class instances for one execution namespace."""
++    namespace = _model_instance_namespace(model_name, is_evaL_run=is_evaL_run)
++    if test_entry_id and involved_classes:
++        target_names = {
++            _instance_name(
++                model_name=model_name,
++                test_entry_id=test_entry_id,
++                class_name=class_name,
++                is_evaL_run=is_evaL_run,
++            )
++            for class_name in involved_classes
++        }
++    else:
++        prefix = f"{namespace}_"
++        if test_entry_id:
++            prefix = f"{namespace}_{test_entry_id}_"
++        target_names = {
++            name
++            for name in list(globals())
++            if name.startswith(prefix) and name.endswith("_instance")
++        }
++
++    removed = 0
++    for name in list(target_names):
++        if name in globals():
++            del globals()[name]
++            removed += 1
++    return removed
++
++
+ def execute_multi_turn_func_call(
+     func_call_list: list[str],  # a list of strings of func calls
+     initial_config: dict,
+@@ -33,16 +87,16 @@ def execute_multi_turn_func_call(
+     """
+     TODO: Add docstring
+     """
+-    if is_evaL_run:
+-        model_name += "_eval"
+-
+     class_method_name_mapping = {}
+     involved_instances = {}
+     for class_name in involved_classes:
+         module_name = CLASS_FILE_PATH_MAPPING[class_name]
+         # TODO: Handler the model name issue from handler more elegantly
+-        instance_name = (
+-            f"{model_name.replace('-', '_').replace('.', '_').replace('/', '_')}_{test_entry_id}_{class_name.lower()}_instance"
++        instance_name = _instance_name(
++            model_name=model_name,
++            test_entry_id=test_entry_id,
++            class_name=class_name,
++            is_evaL_run=is_evaL_run,
+         )
+         if instance_name not in globals():
+             module = importlib.import_module(module_name)
+diff --git a/berkeley-function-call-leaderboard/bfcl_eval/model_handler/api_inference/qwen.py b/berkeley-function-call-leaderboard/bfcl_eval/model_handler/api_inference/qwen.py
+index 9ce4e7d..1035599 100644
+--- a/berkeley-function-call-leaderboard/bfcl_eval/model_handler/api_inference/qwen.py
++++ b/berkeley-function-call-leaderboard/bfcl_eval/model_handler/api_inference/qwen.py
+@@ -5,9 +5,15 @@ from bfcl_eval.model_handler.api_inference.openai_completion import OpenAIComple
+ from bfcl_eval.model_handler.model_style import ModelStyle
+ from openai import OpenAI
+ from overrides import override
+-from qwen_agent.llm import get_chat_model
+ import time
+ 
++
++def _get_qwen_agent_chat_model():
++    """Import qwen_agent lazily so local OpenAI-compatible runs do not import dashscope."""
++    from qwen_agent.llm import get_chat_model
++
++    return get_chat_model
++
+ class QwenAPIHandler(OpenAICompletionsHandler):
+     """
+     This is the OpenAI-compatible API handler with streaming enabled.
+@@ -217,6 +223,7 @@ class QwenAgentThinkHandler(OpenAICompletionsHandler):
+             --max-model-len 65536
+         """
+         
++        get_chat_model = _get_qwen_agent_chat_model()
+         self.llm = get_chat_model({
+         'model': model_name,  # name of the model served by vllm server
+         'model_type': 'oai',
+@@ -316,6 +323,7 @@ class QwenAgentNoThinkHandler(QwenAgentThinkHandler):
+             --max-model-len 65536
+         """
+         
++        get_chat_model = _get_qwen_agent_chat_model()
+         self.llm = get_chat_model({
+         'model': model_name, # name of the model served by vllm server
+         'model_type': 'oai',
+@@ -338,4 +346,4 @@ class QwenAgentNoThinkHandler(QwenAgentThinkHandler):
+             'timeout': 1000,
+             'max_tokens': 16384
+         }
+-    })
+\ No newline at end of file
++    })

@@ -1,0 +1,64 @@
+{
+  "budgets": {
+    "max_requests": 36016,
+    "max_total_tokens": 180000000,
+    "max_workers": 2,
+    "wall_seconds": 64800
+  },
+  "dataset": {
+    "answer_path": "benchmark/bfcl/data/possible_answer",
+    "path": "benchmark/bfcl/data/multiturn_data_base_val.jsonl",
+    "train_path": "benchmark/bfcl/data/multiturn_data_base_train.jsonl"
+  },
+  "experiments": [
+    {
+      "category": "frozen_pipeline_comparison_previously_used_val",
+      "method": "memonly",
+      "name": "variant",
+      "per_turn_memory": true,
+      "tool_scope": "task"
+    }
+  ],
+  "frozen": {
+    "embedding": {
+      "api_key_env": "MCTPO_MEMORY_EMBEDDING_API_KEY",
+      "base_url": "http://127.0.0.1:8014/v1",
+      "batch_size": 32,
+      "dimensions": 1024,
+      "model": "Qwen3-Embedding-0.6B",
+      "timeout_seconds": 120,
+      "usage_is_measured": false
+    },
+    "index_path": "/data/zenghaoyang/TEvov/outputs/core_alignment_20261020/compilation_reviewed/bank/memories_index.json",
+    "memories_path": "/data/zenghaoyang/TEvov/outputs/core_alignment_20261020/compilation_reviewed/bank/memories.json",
+    "retrieval_query_mode": "current_user",
+    "retrieval_tool_filter": true,
+    "top_k": 5
+  },
+  "model": {
+    "api_key_env": "TEVO_LLM_API_KEY",
+    "artifact_manifest_path": "outputs/bfcl_pass4_confirm_20261019/model_artifacts.json",
+    "base_urls": [
+      "http://127.0.0.1:8010/v1"
+    ],
+    "context_budget": {
+      "context_window_tokens": 32768,
+      "policy": "server_tokenize_headroom"
+    },
+    "enable_thinking": true,
+    "max_interactions": 30,
+    "max_retries": 0,
+    "max_tokens": 8192,
+    "name": "/data/zenghaoyang/models/Qwen/Qwen3-8B",
+    "path": "/data/zenghaoyang/models/Qwen/Qwen3-8B",
+    "temperature": 0.9,
+    "timeout_seconds": 600
+  },
+  "output_dir": "outputs/bfcl_source_aligned_variant_20261020",
+  "repeats_per_seed": 4,
+  "sampling_seed_mode": "fixed",
+  "seeds": [
+    0
+  ],
+  "version": 1
+}
